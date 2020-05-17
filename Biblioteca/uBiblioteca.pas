@@ -20,9 +20,10 @@ uses SysUtils;
 function PopulaComboBoxComCDS(ComboBox : TComboBox;CDS: TClientDataSet): Boolean;
 var i : integer;
 begin
+  // Faz o Loop e Passa Em Todos os FIelds do CDS
   for i := 0 to CDS.FieldCount-1 do
   begin
-    ComboBox.Items.Add(CDS.Fields[i].FieldName);
+    ComboBox.Items.Add(CDS.Fields[i].FieldName); // Adiciona ao COMBOBOX os Campos do CDS
   end;
   Result := True;
 end;
@@ -31,6 +32,7 @@ function RetiraMascara(MEdit : TMaskEdit) : String;
 var i : integer;
 s : string;
 begin
+  // Retira Caracteres Improprios
   s := MEdit.Text;
   s := StringReplace(s,'_','',[rfReplaceAll]);
   s := StringReplace(s,'.','',[rfReplaceAll]);
@@ -41,17 +43,18 @@ end;
 function ConfereEditsPreenchidos(Form : TForm): Boolean;
 var I: Integer;
 begin
+ // Faz um Loop, Passa em Todos os COmponetes
   for i := 0 to Form.ComponentCount-1 do
     begin
-      if(Form.Components[i] is TLabeledEdit)then
-       if TLabeledEdit(Form.Components[i]).Text = '' then
+      if(Form.Components[i] is TLabeledEdit)then  // Verifica se è Labled Edit
+       if TLabeledEdit(Form.Components[i]).Text = '' then // Verifica se Está Vazio
        begin
          ShowMessage('Não Foi Possivel Salvar. Preencha o Campo :"'+TLabeledEdit(Form.Components[i]).EditLabel.Caption+'"');
          TLabeledEdit(Form.Components[i]).SetFocus;
          Exit(False);
        end;
-       if(Form.Components[i] is TMaskEdit)then
-       if RetiraMascara(TMaskEdit(Form.Components[i])) = '' then
+       if(Form.Components[i] is TMaskEdit)then // Verifica se è Mask Edit
+       if RetiraMascara(TMaskEdit(Form.Components[i])) = '' then// Verifica se Está Vazio
        begin
          ShowMessage('Não Foi Possivel Salvar. Preencha Todos os  Campos');
          TMaskEdit(Form.Components[i]).SetFocus;
@@ -64,12 +67,13 @@ end;
 function LimpaCampos(Form : TForm):Boolean;
 var I: Integer;
 begin
+  // passa em todos os companentes
   for i := 0 to Form.ComponentCount-1 do
     begin
-      if(Form.Components[i] is TLabeledEdit)then
-       TLabeledEdit(Form.Components[i]).Clear;
-       if(Form.Components[i] is TMaskEdit)then
-       TMaskEdit(Form.Components[i]).Clear;
+      if(Form.Components[i] is TLabeledEdit)then // / Verifica se è Labled Edit
+       TLabeledEdit(Form.Components[i]).Clear;//Limpa
+       if(Form.Components[i] is TMaskEdit)then // Verifica se è Mask Edit
+       TMaskEdit(Form.Components[i]).Clear;//Limpa
     end;
     LimpaCampos := True;
 end;
@@ -77,10 +81,10 @@ end;
 function ValidarEMail(Email: string): Boolean;
 begin
  email := Trim(UpperCase(email));
- if Pos('@', email) > 1 then
+ if Pos('@', email) > 1 then // Verifica se Tem @
  begin
    Delete(email, 1, pos('@', email));
-   Result := (Length(email) > 0) and (Pos('.', email) > 2);
+   Result := (Length(email) > 0) and (Pos('.', email) > 2); // Verifica se Tem . e se nao ta no inicio
  end
  else
    Result := False;
@@ -92,12 +96,12 @@ var
 begin
   vTexto := PChar(S);
   Result := '';
-
+  //Loop Passando em Todas AS Letras
   while (vTexto^ <> #0) do
   begin
     if CharInSet(vTexto^, ['0'..'9']) then
-     if vTexto^ in ['0'..'9'] then
-       Result := Result + vTexto^;
+     if vTexto^ in ['0'..'9'] then // Verifica se tem numeros
+       Result := Result + vTexto^; // Adiciona o numero
 
     Inc(vTexto);
   end;

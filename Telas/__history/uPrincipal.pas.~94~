@@ -11,7 +11,7 @@ uses
   JSON, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdHTTP,
   Vcl.AppEvnts,XMLDoc, XMLIntf, IdExplicitTLSClientServerBase, IdMessageClient,
   IdSMTPBase, IdSMTP, IdAntiFreezeBase, Vcl.IdAntiFreeze, IdMessage,
-  System.ImageList, Vcl.ImgList,MaskUtils;
+  System.ImageList, Vcl.ImgList,MaskUtils,WinInet;
 
 type
   TFCadastroClientes = class(TForm)
@@ -72,6 +72,8 @@ type
     EditCidade: TLabeledEdit;
     EditEstado: TLabeledEdit;
     EditPais: TLabeledEdit;
+    LimparFIltro: TBitBtn;
+    ActionEnviarEmail: TAction;
     procedure MaskEditCpfExit(Sender: TObject);
     procedure EditTelefoneExit(Sender: TObject);
     procedure EditEmailExit(Sender: TObject);
@@ -87,6 +89,21 @@ type
     procedure CBCamposChange(Sender: TObject);
     procedure DBGridClientesDblClick(Sender: TObject);
     procedure ActionAlterarClienteExecute(Sender: TObject);
+    procedure LimparFIltroClick(Sender: TObject);
+    procedure EditConsultaKeyPress(Sender: TObject; var Key: Char);
+    procedure EditNomeKeyPress(Sender: TObject; var Key: Char);
+    procedure MaskEditCpfKeyPress(Sender: TObject; var Key: Char);
+    procedure EditIdentidadeKeyPress(Sender: TObject; var Key: Char);
+    procedure EditTelefoneKeyPress(Sender: TObject; var Key: Char);
+    procedure EditEmailKeyPress(Sender: TObject; var Key: Char);
+    procedure MaskEditCepKeyPress(Sender: TObject; var Key: Char);
+    procedure EditNumeroKeyPress(Sender: TObject; var Key: Char);
+    procedure EditLogradouroKeyPress(Sender: TObject; var Key: Char);
+    procedure EditComplementoKeyPress(Sender: TObject; var Key: Char);
+    procedure EditBairroKeyPress(Sender: TObject; var Key: Char);
+    procedure EditCidadeKeyPress(Sender: TObject; var Key: Char);
+    procedure EditEstadoKeyPress(Sender: TObject; var Key: Char);
+    procedure ActionEnviarEmailExecute(Sender: TObject);
   private
     { Private declarations }
     procedure PreencheEndereco;
@@ -117,6 +134,19 @@ implementation
 
 uses uBiblioteca, uViaCep, uSMTP;
 
+procedure TFCadastroClientes.ActionEnviarEmailExecute(Sender: TObject);
+var Assunto,sDestinatario: String;
+begin
+  GeraXML;
+    if Application.MessageBox('Deseja Enviar Um Email Com os Dados Do Cliente Cadastrado?','Pergunta do Sistema',mb_yesno + mb_iconquestion) = id_yes then
+    begin
+    InputQuery('Por Favor, Informe o Destinatário','Destinatário', sDestinatario);
+    PreencheDadosEmail;
+    Assunto := 'Dados Cadastrais Do Cliente : "'+CDSClientesNOME.AsString+'"';
+    EnviaEmail(Assunto,sDestinatario,CaminhoXML,Dados);
+    end;
+end;
+
 procedure TFCadastroClientes.ActionAlterarClienteExecute(Sender: TObject);
 begin
   if not CdsClientes.IsEmpty then
@@ -145,7 +175,6 @@ procedure TFCadastroClientes.ApplicationEvents1Message(var Msg: tagMSG;
   var Handled: Boolean);
   var Key : Word;
 begin
-
 end;
 
 procedure TFCadastroClientes.BloqueiaCampos;
@@ -187,10 +216,9 @@ end;
 
 procedure TFCadastroClientes.ConsultarClick(Sender: TObject);
 begin
-CdsClientes.Filtered := False;
-CdsClientes.Filter := 'UPPER('+CBCampos.Text+ ') LIKE '+UpperCase(QuotedStr('%' +
-EditConsulta.Text + '%'));;
-CdsClientes.Filtered := True;
+  CdsClientes.Filtered := False;
+  CdsClientes.Filter := 'UPPER('+CBCampos.Text+') Like ' +UpperCase(QuotedStr('%' + EditConsulta.Text + '%'));
+  CdsClientes.Filtered := True;
 end;
 
 procedure TFCadastroClientes.DBGridClientesDblClick(Sender: TObject);
@@ -199,6 +227,7 @@ begin
   PreencheCampos;
   Panel1.Enabled := False;
   Salvar.Visible := False;
+  ActionEnviarEmail.Visible := True;
   ActionCancelar.Caption := 'Voltar';
 end;
 
@@ -206,7 +235,9 @@ procedure TFCadastroClientes.DoEditar;
 begin
   ToRegister;
   PreencheCampos;
+  Panel1.Enabled := True;
   Salvar.Visible := True;
+  ActionEnviarEmail.Visible := False;
   Insere := False;
   Altera := True;
 end;
@@ -224,6 +255,8 @@ begin
   ToRegister;
   LimpaCampos(FCadastroClientes);
   Salvar.Visible := True;
+  Panel1.Enabled := True;
+  ActionEnviarEmail.Visible := False;
   Insere := True;
   Altera := False;
 end;
@@ -231,6 +264,7 @@ end;
 procedure TFCadastroClientes.DoSalvar;
 var ID : integer;
 assunto,sDestinatario : String;
+i:dword;
 begin
   id := 0;
   assunto := '';
@@ -264,16 +298,62 @@ begin
     CDSClientesESTADO.AsString := EditEstado.Text;
     CDSClientesPAIS.AsString := EditPais.Text;
     GeraXML;
+
     if Application.MessageBox('Deseja Enviar Um Email Com os Dados Do Cliente Cadastrado?','Pergunta do Sistema',mb_yesno + mb_iconquestion) = id_yes then
+    begin
+    if InternetGetConnectedState(@i,0) then
     begin
     InputQuery('Por Favor, Informe o Destinatário','Destinatário', sDestinatario);
     PreencheDadosEmail;
     Assunto := 'Dados Cadastrais Do Cliente : "'+CDSClientesNOME.AsString+'"';
     EnviaEmail(Assunto,sDestinatario,CaminhoXML,Dados);
+    end
+    Else
+    ShowMessage('Infelizmente Não é Possível Enviar o Email Porquê Você Não Está Conectado'+
+    ' à Internet.')
     end;
+
     CDSClientes.Post;
     ToHome;
   end;
+end;
+
+procedure TFCadastroClientes.EditBairroKeyPress(Sender: TObject; var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditCidadeKeyPress(Sender: TObject; var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditComplementoKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditConsultaKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
 end;
 
 procedure TFCadastroClientes.EditEmailExit(Sender: TObject);
@@ -284,9 +364,25 @@ begin
   ' Digite um Email Válido!');
   EditEmail.Clear;
   EditEmail.SetFocus;
-  end
-  else
-  MaskEditCep.SetFocus;
+  end;
+end;
+
+procedure TFCadastroClientes.EditEmailKeyPress(Sender: TObject; var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      MaskEditCep.SetFocus;
+   end;
+end;
+
+procedure TFCadastroClientes.EditEstadoKeyPress(Sender: TObject; var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
 end;
 
 procedure TFCadastroClientes.EditIdentidadeExit(Sender: TObject);
@@ -300,6 +396,44 @@ begin
  end;
 end;
 
+procedure TFCadastroClientes.EditIdentidadeKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditLogradouroKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditNomeKeyPress(Sender: TObject; var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditNumeroKeyPress(Sender: TObject; var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
 procedure TFCadastroClientes.EditTelefoneExit(Sender: TObject);
 begin
  if (Length(EditTelefone.Text) < 8) and (EditTelefone.Text <> '(  )     -    ') then
@@ -309,6 +443,16 @@ begin
     EditTelefone.Clear;
     EditTelefone.SetFocus;
  end;
+end;
+
+procedure TFCadastroClientes.EditTelefoneKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
 end;
 
 procedure TFCadastroClientes.FormCreate(Sender: TObject);
@@ -361,10 +505,32 @@ begin
   MaskEditCep.Text := '';
 end;
 
+procedure TFCadastroClientes.LimparFIltroClick(Sender: TObject);
+begin
+ CdsCLientes.Filtered := False;
+end;
+
 procedure TFCadastroClientes.MaskEditCepExit(Sender: TObject);
+var i :dword;
 begin
 if not (MaskEditCep.Text = '     -   ') then
+ if InternetGetConnectedState(@i,0) then
+ begin
  PreencheEndereco;
+ end
+ else
+  ShowMessage('Infelizmente Não é Possível Buscar as Informações do Endereço Porquê Você Não Está Conectado'+
+    ' à Internet.'+#10+'Preencha os Campos Manualmente')
+end;
+
+procedure TFCadastroClientes.MaskEditCepKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
 end;
 
 procedure TFCadastroClientes.MaskEditCpfExit(Sender: TObject);
@@ -377,6 +543,16 @@ begin
   MaskEditCpf.SetFocus;
 end;
 
+end;
+
+procedure TFCadastroClientes.MaskEditCpfKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
 end;
 
 procedure TFCadastroClientes.PreencheCampos;
@@ -399,19 +575,19 @@ end;
 procedure TFCadastroClientes.PreencheDadosEmail;
 begin
   Dados := TStringList.Create;
-  Dados.Add(CDSClientesNOME.AsString);
-  Dados.Add(CDSClientesIDENTIDADE.AsString);
-  Dados.Add(CDSClientesCPF.AsString);
-  Dados.Add(CDSClientesTELEFONE.AsString);
-  Dados.Add(CDSClientesEMAIL.AsString);
-  Dados.Add(CDSClientesCEP.AsString);
-  Dados.Add(CDSClientesLOGRADOURO.AsString);
-  Dados.Add(CDSClientesNUMERO.AsString);
-  Dados.Add(CDSClientesCOMPLEMENTO.AsString);
-  Dados.Add(CDSClientesBAIRRO.AsString);
-  Dados.Add(CDSClientesCIDADE.AsString);
-  Dados.Add(CDSClientesESTADO.AsString);
-  Dados.Add(CDSClientesPAIS.AsString);
+  Dados.Add(EditNome.Text);
+  Dados.Add(MaskEditCpf.Text);
+  Dados.Add(EditIdentidade.Text);
+  Dados.Add(EditTelefone.Text);
+  Dados.Add(EditEmail.Text);
+  Dados.Add(MaskEditCep.Text);
+  Dados.Add(EditLogradouro.Text);
+  Dados.Add(EditNumero.Text);
+  Dados.Add(EditComplemento.Text);
+  Dados.Add(EditBairro.Text);
+  Dados.Add(EditCidade.Text);
+  Dados.Add(EditEstado.Text);
+  Dados.Add(EditPais.Text);
 end;
 
 procedure TFCadastroClientes.PreencheEndereco;

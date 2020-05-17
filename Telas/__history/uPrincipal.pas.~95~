@@ -86,6 +86,7 @@ type
     procedure SalvarExecute(Sender: TObject);
     procedure ActionExcluirClienteExecute(Sender: TObject);
     procedure ActionCancelarExecute(Sender: TObject);
+    procedure ApplicationEvents1Message(var Msg: tagMSG; var Handled: Boolean);
     procedure ConsultarClick(Sender: TObject);
     procedure CBCamposChange(Sender: TObject);
     procedure DBGridClientesDblClick(Sender: TObject);
@@ -141,7 +142,6 @@ procedure TFCadastroClientes.ActionEnviarEmailExecute(Sender: TObject);
 var
   Assunto, sDestinatario: String;
 begin
-  // Gera o Arquivo XML Para Ser Anexado no Email
   GeraXML;
   if Application.MessageBox
     ('Deseja Enviar Um Email Com os Dados Do Cliente Cadastrado?',
@@ -149,7 +149,6 @@ begin
   begin
     InputQuery('Por Favor, Informe o Destinatário', 'Destinatário',
       sDestinatario);
-    // Preenche a String List "DADOS" para adicionar os Dados no Corpo Do Email
     PreencheDadosEmail;
     Assunto := 'Dados Cadastrais Do Cliente : "' +
       CDSClientesNOME.AsString + '"';
@@ -159,7 +158,7 @@ end;
 
 procedure TFCadastroClientes.ActionAlterarClienteExecute(Sender: TObject);
 begin
-  if not CDSClientes.IsEmpty then //Confere se Existem Registros
+  if not CDSClientes.IsEmpty then
     DoEditar
   else
     ShowMessage('Desculpe, Não Existem Dados Para serem Editados!');
@@ -168,7 +167,6 @@ end;
 
 procedure TFCadastroClientes.ActionCancelarExecute(Sender: TObject);
 begin
-  // Vai Para Página Grid
   ToHome;
 end;
 
@@ -182,11 +180,15 @@ begin
   DoInserir;
 end;
 
+procedure TFCadastroClientes.ApplicationEvents1Message(var Msg: tagMSG;
+  var Handled: Boolean);
+var
+  Key: Word;
+begin
+end;
+
 procedure TFCadastroClientes.BloqueiaCampos;
 begin
-  // Verifica Quais Campos Foram Preenchidos e Habilida o ReadOnly
-
-
   if EditLogradouro.Text = '' then
     EditLogradouro.ReadOnly := False
   else
@@ -253,7 +255,7 @@ end;
 
 procedure TFCadastroClientes.DoExcluir;
 begin
-  if not CDSClientes.IsEmpty then // Verifica se Existem Dados
+  if not CDSClientes.IsEmpty then
     CDSClientes.Delete
   else
     ShowMessage('Desculpe, Não Existem Dados Para serem Excluídos!');
@@ -261,8 +263,8 @@ end;
 
 procedure TFCadastroClientes.DoInserir;
 begin
-  ToRegister; // Vai Para Página De Cadastro
-  LimpaCampos(FCadastroClientes); // Limpa os Campos do Cadastro
+  ToRegister;
+  LimpaCampos(FCadastroClientes);
   Salvar.Visible := true;
   Panel1.Enabled := true;
   ActionEnviarEmail.Visible := False;
@@ -278,20 +280,19 @@ var
 begin
   ID := 0;
   Assunto := '';
-  if ConfereEditsPreenchidos(FCadastroClientes) <> False then // Verifica se Todos os Edits Estão Preenchidos Para Dar Prosseguimento a Gravação dos Dados No CDS
+  if ConfereEditsPreenchidos(FCadastroClientes) <> False then
   begin
-
-    if not CDSClientes.IsEmpty then // Verifica se o Cds Se Encontra Vazio Para Preencher a Variável ID, Que nada mais é que o numero de registro do Cliente
+    if not CDSClientes.IsEmpty then
     begin
       CDSClientes.First;
       ID := CDSClientesID.AsInteger + 1;
     end
     else
-      ID := 1;// Se Caso Se Encontrar Vazio, o ID é 1
+      ID := 1;
 
-    if Insere then // Verifica por meio das Variaveis Globais se Está Inserindo
+    if Insere then
       CDSClientes.Append
-    else if Altera then// Verifica por meio das Variaveis Globais se Está Alterando
+    else if Altera then
       CDSClientes.Edit;
 
     CDSClientesID.AsInteger := ID;
@@ -308,21 +309,20 @@ begin
     CDSClientesCIDADE.AsString := EditCidade.Text;
     CDSClientesESTADO.AsString := EditEstado.Text;
     CDSClientesPAIS.AsString := EditPais.Text;
-    GeraXML; // Gera Xml para Anexar no Email
+    GeraXML;
 
     if Application.MessageBox
       ('Deseja Enviar Um Email Com os Dados Do Cliente Cadastrado?',
       'Pergunta do Sistema', mb_yesno + mb_iconquestion) = id_yes then
     begin
-      if InternetGetConnectedState(@i, 0) then // Verifica Conexão da Internet Para Acessar o SMTP
+      if InternetGetConnectedState(@i, 0) then
       begin
         InputQuery('Por Favor, Informe o Destinatário', 'Destinatário',
           sDestinatario);
-        PreencheDadosEmail; // Cria a TString List Dados Para Preencher o Corpo Do Email
+        PreencheDadosEmail;
         Assunto := 'Dados Cadastrais Do Cliente : "' +
           CDSClientesNOME.AsString + '"';
-
-        EnviaEmail(Assunto, sDestinatario, CaminhoXML, Dados);  // Envia Email
+        EnviaEmail(Assunto, sDestinatario, CaminhoXML, Dados);
       end
       Else
         ShowMessage
@@ -331,7 +331,7 @@ begin
     end;
 
     CDSClientes.Post;
-    ToHome;// Volta Para Página Inicial
+    ToHome;
   end;
 end;
 
@@ -375,7 +375,7 @@ end;
 
 procedure TFCadastroClientes.EditEmailExit(Sender: TObject);
 begin
-  if (ValidarEmail(EditEmail.Text) = False) and (EditEmail.Text <> '') then  // Verifica Se o Email Digitado é Vállido
+  if (ValidarEmail(EditEmail.Text) = False) and (EditEmail.Text <> '') then
   begin
     ShowMessage('Ops... O Email Digitado não está Correto. Por Favor' +
       ' Digite um Email Válido!');
@@ -404,7 +404,7 @@ end;
 
 procedure TFCadastroClientes.EditIdentidadeExit(Sender: TObject);
 begin
-  if (Length(EditIdentidade.Text) < 8) and (EditIdentidade.Text <> '') then // Verifica se Pode Ser Uma Identidade Válida ou Não
+  if (Length(EditIdentidade.Text) < 8) and (EditIdentidade.Text <> '') then
   begin
     ShowMessage('Ops... O RG informado não está Correto. Por Favor' +
       ' Digite um RG Válido!');
@@ -453,7 +453,7 @@ end;
 
 procedure TFCadastroClientes.EditTelefoneExit(Sender: TObject);
 begin
-  if (Length(EditTelefone.Text) < 8) and (EditTelefone.Text <> '(  )     -    ') // Verifica se Pode Ser um Numero de Telefone Vailido ou Não
+  if (Length(EditTelefone.Text) < 8) and (EditTelefone.Text <> '(  )     -    ')
   then
   begin
     ShowMessage
@@ -487,11 +487,10 @@ var
   Tabela, Registro, Endereco: IXMLNode;
   i: integer;
 begin
-  XMLDocument := TXMLDocument.Create(Self); // Cria o Componente na Memória
+  XMLDocument := TXMLDocument.Create(Self);
   try
-    XMLDocument.Active := true; // Ativa o COmponente
-    Tabela := XMLDocument.AddChild('cliente'); // Adiciona uma Tabela
-    // Adiciona um registro a Tabela Xml
+    XMLDocument.Active := true;
+    Tabela := XMLDocument.AddChild('cliente');
     Registro := Tabela;
     Registro.ChildValues['Id'] := CDSClientesID.AsInteger;
     Registro.ChildValues['NOME'] := CDSClientesNOME.AsString;
@@ -509,9 +508,7 @@ begin
     Endereco.ChildValues['ESTADO'] := CDSClientesESTADO.AsString;
     Endereco.ChildValues['PAIS'] := CDSClientesPAIS.AsString;
     XMLDocument.SaveToFile(ExtractFilePath(Application.ExeName) + '\XML\' +
-      CDSClientesNOME.AsString + '.xml'); // Salva o XML
-
-      //Seta Caminho do XML Criado Para Anexar no Email
+      CDSClientesNOME.AsString + '.xml');
     CaminhoXML := ExtractFilePath(Application.ExeName) + '\XML\' +
       CDSClientesNOME.AsString + '.xml';
   finally
@@ -539,7 +536,7 @@ var
   i: dword;
 begin
   if not(MaskEditCep.Text = '     -   ') then
-    if InternetGetConnectedState(@i, 0) then // Verifica se Está Conectado na Internet Para se Conectar aos Servidores da Via Cep
+    if InternetGetConnectedState(@i, 0) then
     begin
       PreencheEndereco;
     end
@@ -562,7 +559,7 @@ end;
 procedure TFCadastroClientes.MaskEditCpfExit(Sender: TObject);
 begin
   if (validaCpf(SoNumeros(MaskEditCpf.Text)) = False) and
-    (MaskEditCpf.Text <> '   .   .   -  ') then // Verifica se é um CPF Válido
+    (MaskEditCpf.Text <> '   .   .   -  ') then
   begin
     ShowMessage('Ops... O CPF Digitado não está Correto. Por Favor' +
       ' Digite um CPF Válido!');
@@ -584,7 +581,6 @@ end;
 
 procedure TFCadastroClientes.PreencheCampos;
 begin
-  // Preenche Edits Com dados do CDS
   EditNome.Text := CDSClientesNOME.AsString;
   MaskEditCpf.Text := FormatMaskText('000\.000\.000\-00;0;',
     CDSClientesCPF.AsString);
@@ -604,7 +600,6 @@ end;
 
 procedure TFCadastroClientes.PreencheDadosEmail;
 begin
-  // Cria a String List eAdiciona os Dados a Ela
   Dados := TStringList.Create;
   Dados.Add(EditNome.Text);
   Dados.Add(MaskEditCpf.Text);
@@ -625,7 +620,7 @@ procedure TFCadastroClientes.PreencheEndereco;
 var
   Endereco: TJsonObject;
 begin
-  Endereco := buscaCep(SoNumeros(MaskEditCep.Text), IdHttpViaCep); // Faz a Busca das Informações do Cep e Joga em Um Objeto Json
+  Endereco := buscaCep(SoNumeros(MaskEditCep.Text), IdHttpViaCep);
   if not Assigned(Endereco) then
   begin
     LimpaEndereco;
@@ -637,7 +632,6 @@ begin
   EditBairro.Text := Endereco.Get('bairro').JsonValue.Value;
   EditCidade.Text := Endereco.Get('localidade').JsonValue.Value;
   EditEstado.Text := Endereco.Get('uf').JsonValue.Value;
-  // Bloqueia Campos Trazidos Pelo WebService ViaCep - Para Não Ocorrer Divergências
   BloqueiaCampos;
 end;
 
@@ -648,7 +642,7 @@ end;
 
 procedure TFCadastroClientes.ToHome;
 begin
-  if not((CDSClientes.State = dsInsert) or (CDSClientes.State = dsEdit)) then // Verifica se o Cds Nao se Encontra Aberto, só por Precaução
+  if not((CDSClientes.State = dsInsert) or (CDSClientes.State = dsEdit)) then
   begin
     PagePrincipal.TabVisible := true;
     PageCadastro.TabVisible := False;

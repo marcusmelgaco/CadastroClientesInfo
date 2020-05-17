@@ -23,10 +23,8 @@ object FCadastroClientes: TFCadastroClientes
     ActivePage = PageCadastro
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 608
     object PagePrincipal: TTabSheet
       Caption = 'Inicio'
-      ExplicitWidth = 600
       object DBGridClientes: TDBGrid
         Left = 0
         Top = 26
@@ -52,7 +50,6 @@ object FCadastroClientes: TFCadastroClientes
         Color = clWhite
         ParentBackground = False
         TabOrder = 1
-        ExplicitWidth = 600
         object Label2: TLabel
           Left = 4
           Top = 4
@@ -124,14 +121,11 @@ object FCadastroClientes: TFCadastroClientes
         ParentBiDiMode = False
         ParentFont = False
         Spacing = 0
-        ExplicitWidth = 600
-        ExplicitHeight = 23
       end
     end
     object PageCadastro: TTabSheet
       Caption = 'Cadastro'
       ImageIndex = 1
-      ExplicitWidth = 600
       object ActionToolBar2: TActionToolBar
         Left = 0
         Top = 0
@@ -154,7 +148,6 @@ object FCadastroClientes: TFCadastroClientes
         ParentBiDiMode = False
         ParentFont = False
         Spacing = 0
-        ExplicitTop = -6
       end
       object Panel1: TPanel
         Left = 0
@@ -163,10 +156,6 @@ object FCadastroClientes: TFCadastroClientes
         Height = 250
         Align = alClient
         TabOrder = 1
-        ExplicitLeft = 88
-        ExplicitTop = 128
-        ExplicitWidth = 185
-        ExplicitHeight = 41
         object GBInfPessoais: TGroupBox
           Left = 1
           Top = 1
@@ -175,9 +164,6 @@ object FCadastroClientes: TFCadastroClientes
           Align = alTop
           Caption = 'Informa'#231#245'es Pessoais'
           TabOrder = 0
-          ExplicitLeft = 0
-          ExplicitTop = 23
-          ExplicitWidth = 600
           object Label1: TLabel
             Left = 321
             Top = 16
@@ -264,7 +250,6 @@ object FCadastroClientes: TFCadastroClientes
           Align = alTop
           Caption = 'Endere'#231'o'
           TabOrder = 1
-          ExplicitTop = 105
           object Label3: TLabel
             Left = 10
             Top = 17
@@ -486,7 +471,6 @@ object FCadastroClientes: TFCadastroClientes
     Top = 88
   end
   object ApplicationEvents1: TApplicationEvents
-    OnMessage = ApplicationEvents1Message
     Left = 204
     Top = 119
   end
@@ -670,7 +654,7 @@ object FCadastroClientes: TFCadastroClientes
     Left = 300
     Top = 152
     Bitmap = {
-      494C0101060008002C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010106000800300010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000000000000000000013000304F6000F14E4000D12A90000

@@ -2,7 +2,7 @@ unit uBiblioteca;
 
 interface
 
-uses Vcl.Controls, Vcl.Forms,Vcl.ExtCtrls,Vcl.Mask;
+uses Vcl.Controls, Vcl.Forms,Vcl.ExtCtrls,Vcl.Mask,Dialogs,Vcl.StdCtrls,Datasnap.DBClient;
 
 function validaCPF(CPF: string): boolean;
 // Creditos : DevMedia -- https://www.devmedia.com.br/validando-o-cpf-em-uma-aplicacao-delphi/22180
@@ -10,12 +10,58 @@ function validaCPF(CPF: string): boolean;
 
 function ValidarEMail(Email: string): Boolean;
 function SoNumeros(const S: string): string;
-function LimpaCampos(Form : TForm);
+function LimpaCampos(Form : TForm):Boolean;
+function ConfereEditsPreenchidos(Form : TForm): Boolean;
+function RetiraMascara(MEdit : TMaskEdit) : String;
+function PopulaComboBoxComCDS(ComboBox : TComboBox;CDS : TClientDataSet):Boolean;
 implementation
 uses SysUtils;
 
+function PopulaComboBoxComCDS(ComboBox : TComboBox;CDS: TClientDataSet): Boolean;
+var i : integer;
+begin
+  for i := 0 to CDS.FieldCount-1 do
+  begin
+    ComboBox.Items.Add(CDS.Fields[i].FieldName);
+  end;
+  Result := True;
+end;
 
-function LimpaCampos(Form : TForm);
+function RetiraMascara(MEdit : TMaskEdit) : String;
+var i : integer;
+s : string;
+begin
+  s := MEdit.Text;
+  s := StringReplace(s,'_','',[rfReplaceAll]);
+  s := StringReplace(s,'.','',[rfReplaceAll]);
+  s := StringReplace(s,'-','',[rfReplaceAll]);
+  RetiraMascara := MEdit.Text
+end;
+
+function ConfereEditsPreenchidos(Form : TForm): Boolean;
+var I: Integer;
+begin
+  for i := 0 to Form.ComponentCount-1 do
+    begin
+      if(Form.Components[i] is TLabeledEdit)then
+       if TLabeledEdit(Form.Components[i]).Text = '' then
+       begin
+         ShowMessage('Não Foi Possivel Salvar. Preencha o Campo :"'+TLabeledEdit(Form.Components[i]).EditLabel.Caption+'"');
+         TLabeledEdit(Form.Components[i]).SetFocus;
+         Exit(False);
+       end;
+       if(Form.Components[i] is TMaskEdit)then
+       if RetiraMascara(TMaskEdit(Form.Components[i])) = '' then
+       begin
+         ShowMessage('Não Foi Possivel Salvar. Preencha Todos os  Campos');
+         TMaskEdit(Form.Components[i]).SetFocus;
+         Exit(False);
+       end;
+    end;
+    ConfereEditsPreenchidos := True;
+end;
+
+function LimpaCampos(Form : TForm):Boolean;
 var I: Integer;
 begin
   for i := 0 to Form.ComponentCount-1 do
@@ -25,6 +71,7 @@ begin
        if(Form.Components[i] is TMaskEdit)then
        TMaskEdit(Form.Components[i]).Clear;
     end;
+    LimpaCampos := True;
 end;
 
 function ValidarEMail(Email: string): Boolean;

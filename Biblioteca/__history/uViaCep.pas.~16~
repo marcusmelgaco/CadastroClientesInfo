@@ -14,9 +14,9 @@ const
   INVALID_CHARACTER = -1;
 begin
   Result := True;
-  if CEP.Trim.Length <> 8 then // verifica se o cep é maiorque 8
+  if CEP.Trim.Length <> 8 then
     Exit(False);
-  if StrToIntDef(CEP, INVALID_CHARACTER) = INVALID_CHARACTER then  // verifica se tem algum caracter invalido
+  if StrToIntDef(CEP, INVALID_CHARACTER) = INVALID_CHARACTER then
     Exit(False);
 end;
 
@@ -26,28 +26,25 @@ var
   Response: TStringStream;
   LJsonObj: TJsonObject;
 begin
-  if ValidaCep(CEP) = True then // Valida o Cep para prosseguir
+  if ValidaCep(CEP) = True then
   begin
     try
-      // cria os componentes
       HTTP := TIdHttp.Create;
       IDSSLHandler := TIdSSLIOHandlerSocketOpenSSL.Create;
       HTTP.IOHandler := IDSSLHandler;
       Response := TStringStream.Create;
-      // Pega Informações do WebServcice
       HTTP.Get('http://viacep.com.br/ws/' +CEP+ '/json/', Response);
       if (HTTP.ResponseCode = 200) and
-        (not(Utf8ToAnsi(Response.DataString) = '{'#$A'  "erro": true'#$A'}')) then // Confere se Encontrou o Cep
+        (not(Utf8ToAnsi(Response.DataString) = '{'#$A'  "erro": true'#$A'}')) then
         Result := TJsonObject.ParseJSONValue
-          (TEncoding.ASCII.GetBytes(Utf8ToAnsi(Response.DataString)), 0) // Preenche Resultado com o Objeto JSon
+          (TEncoding.ASCII.GetBytes(Utf8ToAnsi(Response.DataString)), 0)
           as TJsonObject
-      else // Se Ocorrer Erro, Manda a Mensagem abaixo
+      else
       begin
       ShowMessage('Cep Nao Encontrado!');
       Result := Nil;
       end;
     finally
-    // libera componentes da memoria
       FreeAndNil(HTTP);
       FreeAndNil(IDSSLHandler);
       Response.Destroy;
