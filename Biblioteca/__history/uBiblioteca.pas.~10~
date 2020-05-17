@@ -1,0 +1,151 @@
+unit uBiblioteca;
+
+interface
+
+uses Vcl.Controls, Vcl.Forms,Vcl.ExtCtrls,Vcl.Mask,Dialogs;
+
+function validaCPF(CPF: string): boolean;
+// Creditos : DevMedia -- https://www.devmedia.com.br/validando-o-cpf-em-uma-aplicacao-delphi/22180
+
+
+function ValidarEMail(Email: string): Boolean;
+function SoNumeros(const S: string): string;
+function LimpaCampos(Form : TForm):Boolean;
+function ConfereEditsPreenchidos(Form : TForm): Boolean;
+function RetiraMascara(MEdit : TMaskEdit) : String;
+implementation
+uses SysUtils;
+
+function RetiraMascara(MEdit : TMaskEdit) : String;
+var i : integer;
+s : string;
+begin
+  s := MEdit.Text;
+  s := StringReplace(s,'_','',[rfReplaceAll]);
+  s := StringReplace(s,'.','',[rfReplaceAll]);
+  s := StringReplace(s,'-','',[rfReplaceAll]);
+  RetiraMascara := MEdit.Text
+end;
+
+function ConfereEditsPreenchidos(Form : TForm): Boolean;
+var I: Integer;
+begin
+  for i := 0 to Form.ComponentCount-1 do
+    begin
+      if(Form.Components[i] is TLabeledEdit)then
+       if TLabeledEdit(Form.Components[i]).Text = '' then
+       begin
+         ShowMessage('Não Foi Possivel Salvar. Preencha o Campo :"'+TLabeledEdit(Form.Components[i]).EditLabel.Caption+'"');
+         ConfereEditsPreenchidos:= False;
+         TLabeledEdit(Form.Components[i]).SetFocus;
+         Exit;
+       end;
+       if(Form.Components[i] is TMaskEdit)then
+       if RetiraMascara(TMaskEdit(Form.Components[i])) = '' then
+       begin
+         ShowMessage('Não Foi Possivel Salvar. Preencha Todos os  Campos');
+         ConfereEditsPreenchidos:= False;
+         TMaskEdit(Form.Components[i]).SetFocus;
+         Exit;
+       end;
+    end;
+    ConfereEditsPreenchidos := True;
+end;
+
+function LimpaCampos(Form : TForm):Boolean;
+var I: Integer;
+begin
+  for i := 0 to Form.ComponentCount-1 do
+    begin
+      if(Form.Components[i] is TLabeledEdit)then
+       TLabeledEdit(Form.Components[i]).Clear;
+       if(Form.Components[i] is TMaskEdit)then
+       TMaskEdit(Form.Components[i]).Clear;
+    end;
+    LimpaCampos := True;
+end;
+
+function ValidarEMail(Email: string): Boolean;
+begin
+ email := Trim(UpperCase(email));
+ if Pos('@', email) > 1 then
+ begin
+   Delete(email, 1, pos('@', email));
+   Result := (Length(email) > 0) and (Pos('.', email) > 2);
+ end
+ else
+   Result := False;
+end;
+
+function SoNumeros(const S: string): string;
+var
+  vTexto : PChar;
+begin
+  vTexto := PChar(S);
+  Result := '';
+
+  while (vTexto^ <> #0) do
+  begin
+    if CharInSet(vTexto^, ['0'..'9']) then
+     if vTexto^ in ['0'..'9'] then
+       Result := Result + vTexto^;
+
+    Inc(vTexto);
+  end;
+end;
+
+function validaCPF(CPF: string): boolean;
+var  dig10, dig11: string;
+    s, i, r, peso: integer;
+begin
+// length - retorna o tamanho da string (CPF é um número formado por 11 dígitos)
+  if ((CPF = '00000000000') or (CPF = '11111111111') or
+      (CPF = '22222222222') or (CPF = '33333333333') or
+      (CPF = '44444444444') or (CPF = '55555555555') or
+      (CPF = '66666666666') or (CPF = '77777777777') or
+      (CPF = '88888888888') or (CPF = '99999999999') or
+      (length(CPF) <> 11))
+     then begin
+              validaCPF := false;
+              exit;
+            end;
+
+// try - protege o código para eventuais erros de conversão de tipo na função StrToInt
+  try
+{ *-- Cálculo do 1o. Digito Verificador --* }
+    s := 0;
+    peso := 10;
+    for i := 1 to 9 do
+    begin
+// StrToInt converte o i-ésimo caractere do CPF em um número
+      s := s + (StrToInt(CPF[i]) * peso);
+      peso := peso - 1;
+    end;
+    r := 11 - (s mod 11);
+    if ((r = 10) or (r = 11))
+       then dig10 := '0'
+    else str(r:1, dig10); // converte um número no respectivo caractere numérico
+
+{ *-- Cálculo do 2o. Digito Verificador --* }
+    s := 0;
+    peso := 11;
+    for i := 1 to 10 do
+    begin
+      s := s + (StrToInt(CPF[i]) * peso);
+      peso := peso - 1;
+    end;
+    r := 11 - (s mod 11);
+    if ((r = 10) or (r = 11))
+       then dig11 := '0'
+    else str(r:1, dig11);
+
+{ Verifica se os digitos calculados conferem com os digitos informados. }
+    if ((dig10 = CPF[10]) and (dig11 = CPF[11]))
+       then validaCPF := true
+    else validaCPF := false;
+  except
+    validaCPF := false
+  end;
+end;
+
+end.

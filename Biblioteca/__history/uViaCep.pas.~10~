@@ -1,0 +1,43 @@
+unit uViaCep;
+
+interface
+uses idHTTP, IdSSLOpenSSL,JSON,System.Classes,SysUtils;
+
+function buscaCep(CEP:String;HTTP:TIdHttp):TJsonObject;
+
+implementation
+
+function ValidaCep(CEP: string): Boolean;
+const
+  INVALID_CHARACTER = -1;
+begin
+  Result := True;
+  if Cep.Trim.Length <> 8 then
+    Exit(False);
+  if StrToIntDef(Cep, INVALID_CHARACTER) = INVALID_CHARACTER then
+    Exit(False);
+end;
+
+function buscaCEP(CEP: string;HTTP:TIdHttp): TJSONObject;
+var
+   IDSSLHandler : TIdSSLIOHandlerSocketOpenSSL;
+   Response: TStringStream;
+   LJsonObj: TJSONObject;
+begin
+   try
+      HTTP := TIdHTTP.Create;
+      IDSSLHandler := TIdSSLIOHandlerSocketOpenSSL.Create;
+      HTTP.IOHandler := IDSSLHandler;
+      Response := TStringStream.Create('');
+      HTTP.Get('http://viacep.com.br/ws/' + CEP + '/json/',Response);
+      if (HTTP.ResponseCode = 200) and not(Utf8ToAnsi(Response.DataString) = '{'#$A'  "erro": true'#$A'}') then
+         Result := TJSONObject.ParseJSONValue(TEncoding.ASCII.GetBytes( Utf8ToAnsi(Response.DataString)), 0) as TJSONObject;
+   finally
+      FreeAndNil(HTTP);
+      FreeAndNil(IDSSLHandler);
+      Response.Destroy;
+   end;
+end;
+
+
+end.

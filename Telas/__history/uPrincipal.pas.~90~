@@ -1,0 +1,599 @@
+unit uPrincipal;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Data.DB, Vcl.ToolWin, Vcl.ActnMan,
+  Vcl.ActnCtrls, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls, Vcl.Mask, Vcl.Grids,
+  Vcl.DBGrids, Vcl.ComCtrls, System.Actions, Vcl.ActnList,
+  Vcl.PlatformDefaultStyleActnCtrls, Datasnap.DBClient,Data.DBXJSON, DBXJSONReflect,
+  JSON, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdHTTP,
+  Vcl.AppEvnts,XMLDoc, XMLIntf, IdExplicitTLSClientServerBase, IdMessageClient,
+  IdSMTPBase, IdSMTP, IdAntiFreezeBase, Vcl.IdAntiFreeze, IdMessage,
+  System.ImageList, Vcl.ImgList,MaskUtils;
+
+type
+  TFCadastroClientes = class(TForm)
+    DSClientes: TDataSource;
+    ActionManager1: TActionManager;
+    ActionInserir: TAction;
+    ActionExcluirCliente: TAction;
+    PCCadastro: TPageControl;
+    PagePrincipal: TTabSheet;
+    PageCadastro: TTabSheet;
+    DBGridClientes: TDBGrid;
+    PanelConsultaRapida: TPanel;
+    CBCampos: TComboBox;
+    EditConsulta: TEdit;
+    Consultar: TBitBtn;
+    ActionToolBar1: TActionToolBar;
+    ActionToolBar2: TActionToolBar;
+    Salvar: TAction;
+    ActionCancelar: TAction;
+    IdHttpViaCep: TIdHTTP;
+    ApplicationEvents1: TApplicationEvents;
+    CDSClientes: TClientDataSet;
+    CDSClientesID: TIntegerField;
+    CDSClientesNOME: TStringField;
+    CDSClientesIDENTIDADE: TStringField;
+    CDSClientesCPF: TStringField;
+    CDSClientesTELEFONE: TStringField;
+    CDSClientesEMAIL: TStringField;
+    CDSClientesCEP: TStringField;
+    CDSClientesLOGRADOURO: TStringField;
+    CDSClientesNUMERO: TIntegerField;
+    CDSClientesCOMPLEMENTO: TStringField;
+    CDSClientesBAIRRO: TStringField;
+    CDSClientesCIDADE: TStringField;
+    CDSClientesESTADO: TStringField;
+    CDSClientesPAIS: TStringField;
+    Action1: TAction;
+    Label2: TLabel;
+    Label4: TLabel;
+    ImageList1: TImageList;
+    ActionAlterarCliente: TAction;
+    Panel1: TPanel;
+    GBInfPessoais: TGroupBox;
+    Label1: TLabel;
+    Label5: TLabel;
+    EditNome: TLabeledEdit;
+    MaskEditCpf: TMaskEdit;
+    EditIdentidade: TLabeledEdit;
+    EditEmail: TLabeledEdit;
+    EditTelefone: TMaskEdit;
+    GBEndereco: TGroupBox;
+    Label3: TLabel;
+    MaskEditCep: TMaskEdit;
+    EditLogradouro: TLabeledEdit;
+    EditNumero: TLabeledEdit;
+    EditComplemento: TLabeledEdit;
+    EditBairro: TLabeledEdit;
+    EditCidade: TLabeledEdit;
+    EditEstado: TLabeledEdit;
+    EditPais: TLabeledEdit;
+    LimparFIltro: TBitBtn;
+    procedure MaskEditCpfExit(Sender: TObject);
+    procedure EditTelefoneExit(Sender: TObject);
+    procedure EditEmailExit(Sender: TObject);
+    procedure EditIdentidadeExit(Sender: TObject);
+    procedure MaskEditCepExit(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure ActionInserirExecute(Sender: TObject);
+    procedure SalvarExecute(Sender: TObject);
+    procedure ActionExcluirClienteExecute(Sender: TObject);
+    procedure ActionCancelarExecute(Sender: TObject);
+    procedure ApplicationEvents1Message(var Msg: tagMSG; var Handled: Boolean);
+    procedure ConsultarClick(Sender: TObject);
+    procedure CBCamposChange(Sender: TObject);
+    procedure DBGridClientesDblClick(Sender: TObject);
+    procedure ActionAlterarClienteExecute(Sender: TObject);
+    procedure LimparFIltroClick(Sender: TObject);
+    procedure EditConsultaKeyPress(Sender: TObject; var Key: Char);
+    procedure EditNomeKeyPress(Sender: TObject; var Key: Char);
+    procedure MaskEditCpfKeyPress(Sender: TObject; var Key: Char);
+    procedure EditIdentidadeKeyPress(Sender: TObject; var Key: Char);
+    procedure EditTelefoneKeyPress(Sender: TObject; var Key: Char);
+    procedure EditEmailKeyPress(Sender: TObject; var Key: Char);
+    procedure MaskEditCepKeyPress(Sender: TObject; var Key: Char);
+    procedure EditNumeroKeyPress(Sender: TObject; var Key: Char);
+    procedure EditLogradouroKeyPress(Sender: TObject; var Key: Char);
+    procedure EditComplementoKeyPress(Sender: TObject; var Key: Char);
+    procedure EditBairroKeyPress(Sender: TObject; var Key: Char);
+    procedure EditCidadeKeyPress(Sender: TObject; var Key: Char);
+    procedure EditEstadoKeyPress(Sender: TObject; var Key: Char);
+  private
+    { Private declarations }
+    procedure PreencheEndereco;
+    procedure PreencheDadosEmail;
+    procedure ToHome;
+    procedure ToRegister;
+    procedure PreencheCampos;
+    procedure BloqueiaCampos;
+    procedure LimpaEndereco;
+    procedure DoSalvar;
+    procedure DoExcluir;
+    procedure DoEditar;
+    procedure DoInserir;
+    procedure GeraXML;
+    var Dados : TStringList;
+    CaminhoXML:String;
+    Insere,Altera : Boolean;
+  public
+    { Public declarations }
+  end;
+
+var
+  FCadastroClientes: TFCadastroClientes;
+
+implementation
+
+{$R *.dfm}
+
+uses uBiblioteca, uViaCep, uSMTP;
+
+procedure TFCadastroClientes.ActionAlterarClienteExecute(Sender: TObject);
+begin
+  if not CdsClientes.IsEmpty then
+  DoEditar
+  else
+  ShowMessage('Desculpe, Não Existem Dados Para serem Editados!');
+
+end;
+
+procedure TFCadastroClientes.ActionCancelarExecute(Sender: TObject);
+begin
+ ToHome;
+end;
+
+procedure TFCadastroClientes.ActionExcluirClienteExecute(Sender: TObject);
+begin
+  DoExcluir;
+end;
+
+procedure TFCadastroClientes.ActionInserirExecute(Sender: TObject);
+begin
+  DoInserir;
+end;
+
+procedure TFCadastroClientes.ApplicationEvents1Message(var Msg: tagMSG;
+  var Handled: Boolean);
+  var Key : Word;
+begin
+end;
+
+procedure TFCadastroClientes.BloqueiaCampos;
+begin
+  if EditLogradouro.Text = '' then
+  EditLogradouro.ReadOnly := False
+  else
+  EditLogradouro.ReadOnly := true;
+
+  if EditComplemento.Text ='' then
+  EditComplemento.ReadOnly := False
+  else
+  EditComplemento.ReadOnly := True;
+
+  if EditBairro.Text = '' then
+  EditBairro.ReadOnly := False
+  else
+  EditBairro.ReadOnly := True;
+
+  if EditCidade.Text = '' then
+  EditCidade.ReadOnly := False
+  else
+  EditCidade.ReadOnly := True;
+
+  if EditEstado.Text = '' then
+  EditEstado.ReadOnly := False
+  else
+  EditEstado.ReadOnly := True;
+
+end;
+
+procedure TFCadastroClientes.CBCamposChange(Sender: TObject);
+begin
+if CDSClientes.Fields[CBCampos.ItemIndex].DataType = ftInteger then
+  EditConsulta.NumbersOnly := True
+  else
+  EditConsulta.NumbersOnly := False;
+end;
+
+procedure TFCadastroClientes.ConsultarClick(Sender: TObject);
+begin
+  CdsClientes.Filtered := False;
+  CdsClientes.Filter := 'UPPER('+CBCampos.Text+') Like ' +UpperCase(QuotedStr('%' + EditConsulta.Text + '%'));
+  CdsClientes.Filtered := True;
+end;
+
+procedure TFCadastroClientes.DBGridClientesDblClick(Sender: TObject);
+begin
+  ToRegister;
+  PreencheCampos;
+  Panel1.Enabled := False;
+  Salvar.Visible := False;
+  ActionCancelar.Caption := 'Voltar';
+end;
+
+procedure TFCadastroClientes.DoEditar;
+begin
+  ToRegister;
+  PreencheCampos;
+  Panel1.Enabled := True;
+  Salvar.Visible := True;
+  Insere := False;
+  Altera := True;
+end;
+
+procedure TFCadastroClientes.DoExcluir;
+begin
+  if not CdsClientes.IsEmpty then
+  CdsClientes.Delete
+  else
+  ShowMessage('Desculpe, Não Existem Dados Para serem Excluídos!');
+end;
+
+procedure TFCadastroClientes.DoInserir;
+begin
+  ToRegister;
+  LimpaCampos(FCadastroClientes);
+  Salvar.Visible := True;
+  Panel1.Enabled := True;
+  Insere := True;
+  Altera := False;
+end;
+
+procedure TFCadastroClientes.DoSalvar;
+var ID : integer;
+assunto,sDestinatario : String;
+begin
+  id := 0;
+  assunto := '';
+  if ConfereEditsPreenchidos(FCadastroClientes) <> False then
+  begin
+   if not CDSClientes.IsEmpty then
+   begin
+    CDSCLientes.First;
+    ID := CDSClientesID.AsInteger+1;
+   end
+   else
+    ID := 1;
+
+    if Insere then
+    CDSClientes.Append
+    else if Altera then
+    CDSClientes.Edit;
+
+    CDSClientesID.AsInteger := ID;
+    CDSClientesNOME.AsString := EditNome.Text;
+    CDSClientesCPF.AsString := SoNumeros(MaskEditCpf.Text);
+    CDSClientesIDENTIDADE.AsString := EditIdentidade.Text;
+    CDSClientesTELEFONE.AsString := SoNumeros(EditTelefone.Text);
+    CDSClientesEMAIL.AsString := EditEmail.Text;
+    CDSClientesCEP.AsString := SoNumeros(MaskEditCep.Text);
+    CDSClientesLOGRADOURO.AsString := EditLogradouro.Text;
+    CDSClientesNUMERO.AsInteger := StrToInt(EditNumero.Text);
+    CDSClientesCOMPLEMENTO.AsString := EditComplemento.Text;
+    CDSClientesBAIRRO.AsString := EditBairro.Text;
+    CDSClientesCIDADE.AsString := EditCidade.Text;
+    CDSClientesESTADO.AsString := EditEstado.Text;
+    CDSClientesPAIS.AsString := EditPais.Text;
+    GeraXML;
+    if Application.MessageBox('Deseja Enviar Um Email Com os Dados Do Cliente Cadastrado?','Pergunta do Sistema',mb_yesno + mb_iconquestion) = id_yes then
+    begin
+    InputQuery('Por Favor, Informe o Destinatário','Destinatário', sDestinatario);
+    PreencheDadosEmail;
+    Assunto := 'Dados Cadastrais Do Cliente : "'+CDSClientesNOME.AsString+'"';
+    EnviaEmail(Assunto,sDestinatario,CaminhoXML,Dados);
+    end;
+    CDSClientes.Post;
+    ToHome;
+  end;
+end;
+
+procedure TFCadastroClientes.EditBairroKeyPress(Sender: TObject; var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditCidadeKeyPress(Sender: TObject; var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditComplementoKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditConsultaKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditEmailExit(Sender: TObject);
+begin
+  if (ValidarEmail(EditEmail.Text) = false) and (EditEmail.Text <> '')then
+  begin
+  ShowMessage('Ops... O Email Digitado não está Correto. Por Favor'+
+  ' Digite um Email Válido!');
+  EditEmail.Clear;
+  EditEmail.SetFocus;
+  end;
+end;
+
+procedure TFCadastroClientes.EditEmailKeyPress(Sender: TObject; var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      MaskEditCep.SetFocus;
+   end;
+end;
+
+procedure TFCadastroClientes.EditEstadoKeyPress(Sender: TObject; var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditIdentidadeExit(Sender: TObject);
+begin
+  if (Length(EditIdentidade.Text) < 8) and (EditIdentidade.Text <> '')then
+  begin
+    ShowMessage('Ops... O RG informado não está Correto. Por Favor'+
+    ' Digite um RG Válido!');
+    EditIdentidade.Clear;
+    EditIdentidade.SetFocus;
+ end;
+end;
+
+procedure TFCadastroClientes.EditIdentidadeKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditLogradouroKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditNomeKeyPress(Sender: TObject; var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditNumeroKeyPress(Sender: TObject; var Key: Char);
+begin
+  If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.EditTelefoneExit(Sender: TObject);
+begin
+ if (Length(EditTelefone.Text) < 8) and (EditTelefone.Text <> '(  )     -    ') then
+ begin
+   ShowMessage('Ops... O Número de Telefone Digitado não está Correto. Por Favor'+
+   ' Digite um Número Válido!');
+    EditTelefone.Clear;
+    EditTelefone.SetFocus;
+ end;
+end;
+
+procedure TFCadastroClientes.EditTelefoneKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.FormCreate(Sender: TObject);
+begin
+  PageCadastro.TabVisible := false;
+  PopulaComboBoxComCDS(CBCampos,CDSClientes);
+  CBCampos.ItemIndex := 1;
+end;
+
+procedure TFCadastroClientes.GeraXML;
+var
+  XMLDocument: TXMLDocument;
+  Tabela, Registro, Endereco: IXMLNode;
+  I: Integer;
+begin
+  XMLDocument := TXMLDocument.Create(Self);
+  try
+    XMLDocument.Active := True;
+    Tabela := XMLDocument.AddChild('cliente');
+      Registro := Tabela;
+      Registro.ChildValues['Id'] := CDSClientesID.AsInteger;
+      Registro.ChildValues['NOME'] := CDSClientesNOME.AsString;
+      Registro.ChildValues['IDENTIDADE'] := CDSClientesIDENTIDADE.AsString;
+      Registro.ChildValues['CPF'] := CDSClientesCPF.AsString;
+      Registro.ChildValues['TELEFONE'] := CDSClientesTELEFONE.AsString;
+      Registro.ChildValues['EMAIL'] := CDSClientesEMAIL.AsString;
+      Endereco := Registro.AddChild('endereco');
+      Endereco.ChildValues['CEP'] := CDSClientesCEP.AsString;
+      Endereco.ChildValues['LOGRADOURO'] := CDSClientesLOGRADOURO.AsString;
+      Endereco.ChildValues['NUMERO'] := CDSClientesNUMERO.AsInteger;
+      Endereco.ChildValues['COMPLEMENTO'] := CDSClientesCOMPLEMENTO.AsString;
+      Endereco.ChildValues['BAIRRO'] := CDSClientesBAIRRO.AsString;
+      Endereco.ChildValues['CIDADE'] := CDSClientesCIDADE.AsString;
+      Endereco.ChildValues['ESTADO'] := CDSClientesESTADO.AsString;
+      Endereco.ChildValues['PAIS'] := CDSClientesPAIS.AsString;
+    XMLDocument.SaveToFile(ExtractFilePath(Application.ExeName)+'\XML\'+CDSClientesNome.AsString+'.xml');
+    CaminhoXML := ExtractFilePath(Application.ExeName)+'\XML\'+CDSClientesNome.AsString+'.xml';
+  finally
+    XMLDocument.Free;
+  end;
+end;
+
+procedure TFCadastroClientes.LimpaEndereco;
+begin
+  EditLogradouro.Text := '';
+  EditComplemento.Text := '';
+  EditBairro.Text := '';
+  EditCidade.Text := '';
+  EditEstado.Text := '';
+  MaskEditCep.Text := '';
+end;
+
+procedure TFCadastroClientes.LimparFIltroClick(Sender: TObject);
+begin
+ CdsCLientes.Filtered := False;
+end;
+
+procedure TFCadastroClientes.MaskEditCepExit(Sender: TObject);
+begin
+if not (MaskEditCep.Text = '     -   ') then
+ PreencheEndereco;
+end;
+
+procedure TFCadastroClientes.MaskEditCepKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.MaskEditCpfExit(Sender: TObject);
+begin
+if (validaCpf(SoNumeros(MaskEditCPF.Text)) = false) and (MaskEditCpf.Text <> '   .   .   -  ') then
+begin
+  ShowMessage('Ops... O CPF Digitado não está Correto. Por Favor'+
+  ' Digite um CPF Válido!');
+  MaskEditCpf.Clear;
+  MaskEditCpf.SetFocus;
+end;
+
+end;
+
+procedure TFCadastroClientes.MaskEditCpfKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 then
+   Begin
+      Key:= #0;
+      Perform(Wm_NextDlgCtl,0,0);
+   end;
+end;
+
+procedure TFCadastroClientes.PreencheCampos;
+begin
+  EditNome.Text := CDSClientesNOME.AsString;
+  MaskEditCpf.Text := FormatMaskText('000\.000\.000\-00;0;', CDSClientesCPF.AsString);
+  EditIdentidade.Text :=  CDSClientesIDENTIDADE.AsString;
+  EditTelefone.Text := FormatMaskText('\(00\)00000\-0009;0;', CDSClientesTELEFONE.AsString);
+  EditEmail.Text := CDSClientesEMAIL.AsString;
+  MaskEditCep.Text := FormatMaskText('00000\-000;0;', CDSClientesCEP.AsString);
+  EditLogradouro.Text := CDSClientesLOGRADOURO.AsString;
+  EditNumero.Text := IntToStr(CDSClientesNUMERO.AsInteger);
+  EditComplemento.Text := CDSClientesCOMPLEMENTO.AsString;
+  EditBairro.Text:= CDSClientesBAIRRO.AsString;
+  EditCidade.Text := CDSClientesCIDADE.AsString;
+  EditEstado.Text := CDSClientesESTADO.AsString;
+  EditPais.Text := CDSClientesPAIS.AsString;
+end;
+
+procedure TFCadastroClientes.PreencheDadosEmail;
+begin
+  Dados := TStringList.Create;
+  Dados.Add(CDSClientesNOME.AsString);
+  Dados.Add(CDSClientesIDENTIDADE.AsString);
+  Dados.Add(CDSClientesCPF.AsString);
+  Dados.Add(CDSClientesTELEFONE.AsString);
+  Dados.Add(CDSClientesEMAIL.AsString);
+  Dados.Add(CDSClientesCEP.AsString);
+  Dados.Add(CDSClientesLOGRADOURO.AsString);
+  Dados.Add(CDSClientesNUMERO.AsString);
+  Dados.Add(CDSClientesCOMPLEMENTO.AsString);
+  Dados.Add(CDSClientesBAIRRO.AsString);
+  Dados.Add(CDSClientesCIDADE.AsString);
+  Dados.Add(CDSClientesESTADO.AsString);
+  Dados.Add(CDSClientesPAIS.AsString);
+end;
+
+procedure TFCadastroClientes.PreencheEndereco;
+var Endereco: TJsonObject;
+begin
+  Endereco := buscaCep(SoNumeros(MaskEditCep.Text),IDHttpViaCep);
+  if not Assigned(Endereco) then
+  begin
+    LimpaEndereco;
+    MaskEditCep.SetFocus;
+    Exit;
+  end;
+  EditLogradouro.Text := Endereco.Get('logradouro').JsonValue.Value;
+  EditComplemento.Text := Endereco.Get('complemento').JsonValue.Value;
+  EditBairro.Text := Endereco.Get('bairro').JsonValue.Value;
+  EditCidade.Text := Endereco.Get('localidade').JsonValue.Value;
+  EditEstado.Text := Endereco.Get('uf').JsonValue.Value;
+  BloqueiaCampos;
+end;
+
+procedure TFCadastroClientes.SalvarExecute(Sender: TObject);
+begin
+  DoSalvar;
+end;
+
+procedure TFCadastroClientes.ToHome;
+begin
+  if not ((CDSClientes.State =dsInsert) or (CDSClientes.State =dsEdit)) then
+  begin
+    PagePrincipal.TabVisible := true;
+    PageCadastro.TabVisible := False;
+    PCCadastro.TabIndex := 0;
+  end;
+end;
+
+procedure TFCadastroClientes.ToRegister;
+begin
+  PCCadastro.TabIndex := 1;
+  PagePrincipal.TabVisible := false;
+  PageCadastro.TabVisible := True;
+end;
+
+end.

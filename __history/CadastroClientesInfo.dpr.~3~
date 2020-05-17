@@ -1,0 +1,15 @@
+program CadastroClientesInfo;
+
+uses
+  Vcl.Forms,
+  uPrincipal in 'Telas\uPrincipal.pas' {Form1},
+  Biblioteca in 'Biblioteca\Biblioteca.pas';
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TForm1, Form1);
+  Application.Run;
+end.

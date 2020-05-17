@@ -1,0 +1,82 @@
+unit Biblioteca;
+
+interface
+function validaCPF(CPF: string): boolean;
+function SoNumeros(const S: string): string;
+// Creditos : DevMedia -- https://www.devmedia.com.br/validando-o-cpf-em-uma-aplicacao-delphi/22180
+
+implementation
+uses SysUtils;
+
+function SoNumeros(const S: string): string;
+var
+  vTexto : PChar;
+begin
+  vTexto := PChar(S);
+  Result := '';
+
+  while (vTexto^ <> #0) do
+  begin
+    if CharInSet(vTexto^, ['0'..'9']) then
+     if vTexto^ in ['0'..'9'] then
+       Result := Result + vTexto^;
+
+    Inc(vTexto);
+  end;
+end;
+
+function validaCPF(CPF: string): boolean;
+var  dig10, dig11: string;
+    s, i, r, peso: integer;
+begin
+// length - retorna o tamanho da string (CPF é um número formado por 11 dígitos)
+  if ((CPF = '00000000000') or (CPF = '11111111111') or
+      (CPF = '22222222222') or (CPF = '33333333333') or
+      (CPF = '44444444444') or (CPF = '55555555555') or
+      (CPF = '66666666666') or (CPF = '77777777777') or
+      (CPF = '88888888888') or (CPF = '99999999999') or
+      (length(CPF) <> 11))
+     then begin
+              validaCPF := false;
+              exit;
+            end;
+
+// try - protege o código para eventuais erros de conversão de tipo na função StrToInt
+  try
+{ *-- Cálculo do 1o. Digito Verificador --* }
+    s := 0;
+    peso := 10;
+    for i := 1 to 9 do
+    begin
+// StrToInt converte o i-ésimo caractere do CPF em um número
+      s := s + (StrToInt(CPF[i]) * peso);
+      peso := peso - 1;
+    end;
+    r := 11 - (s mod 11);
+    if ((r = 10) or (r = 11))
+       then dig10 := '0'
+    else str(r:1, dig10); // converte um número no respectivo caractere numérico
+
+{ *-- Cálculo do 2o. Digito Verificador --* }
+    s := 0;
+    peso := 11;
+    for i := 1 to 10 do
+    begin
+      s := s + (StrToInt(CPF[i]) * peso);
+      peso := peso - 1;
+    end;
+    r := 11 - (s mod 11);
+    if ((r = 10) or (r = 11))
+       then dig11 := '0'
+    else str(r:1, dig11);
+
+{ Verifica se os digitos calculados conferem com os digitos informados. }
+    if ((dig10 = CPF[10]) and (dig11 = CPF[11]))
+       then validaCPF := true
+    else validaCPF := false;
+  except
+    validaCPF := false
+  end;
+end;
+
+end.

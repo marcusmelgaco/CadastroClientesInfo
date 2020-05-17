@@ -1,0 +1,93 @@
+unit uSMTP;
+
+interface
+uses IdSMTP, IdSSLOpenSSL, IdMessage, IdText, IdAttachmentFile,
+  IdExplicitTLSClientServerBase,Winapi.Windows, Winapi.Messages,
+  System.SysUtils, System.Variants, System.Classes,Dialogs,Forms;
+
+function EnviaEmail(Assunto:String;Destinatario:String;AnexoXML:String);
+implementation
+function EnviaEmail(Assunto:String;Destinatario:String;AnexoXML:String);
+var
+  // variáveis e objetos necessários para o envio
+  IdSSLIOHandlerSocket: TIdSSLIOHandlerSocketOpenSSL;
+  IdSMTP: TIdSMTP;
+  IdMessage: TIdMessage;
+  IdText: TIdText;
+  sAnexo: string;
+begin
+  // instanciação dos objetos
+  IdSSLIOHandlerSocket := TIdSSLIOHandlerSocketOpenSSL.Create(Application);
+  IdSMTP := TIdSMTP.Create(Application);
+  IdMessage := TIdMessage.Create(Application);
+
+  try
+    // Configuração do protocolo SSL (TIdSSLIOHandlerSocketOpenSSL)
+    IdSSLIOHandlerSocket.SSLOptions.Method := sslvSSLv23;
+    IdSSLIOHandlerSocket.SSLOptions.Mode := sslmClient;
+
+    // Configuração do servidor SMTP (TIdSMTP)
+    IdSMTP.IOHandler := IdSSLIOHandlerSocket;
+    IdSMTP.UseTLS := utUseImplicitTLS;
+    IdSMTP.AuthType := satDefault;
+    IdSMTP.Port := 465;
+    IdSMTP.Host := 'smtp.gmail.com';
+    IdSMTP.Username := 'cadastroinfosistemas@gmail.com';
+    IdSMTP.Password := 'marcus159';
+
+    // Configuração da mensagem (TIdMessage)
+    IdMessage.From.Address := 'cadastroinfosistemas@gmail.com';
+    IdMessage.From.Name := 'Cadastro InfoSistemas - Marcus Melgaço';
+    IdMessage.ReplyTo.EMailAddresses := IdMessage.From.Address;
+    IdMessage.Recipients.Add.Text := Destinatario;
+    IdMessage.Subject := Assunto;
+    IdMessage.Encoding := meMIME;
+
+    // Configuração do corpo do email (TIdText)
+    IdText := TIdText.Create(IdMessage.MessageParts);
+    IdText.Body.Add('Corpo do e-mail');
+    IdText.ContentType := 'text/plain; charset=iso-8859-1';
+
+    // Opcional - Anexo da mensagem (TIdAttachmentFile)
+    sAnexo := AnexoXML;
+    if FileExists(sAnexo) then
+    begin
+      TIdAttachmentFile.Create(IdMessage.MessageParts, sAnexo);
+    end;
+
+    // Conexão e autenticação
+    try
+      IdSMTP.Connect;
+      IdSMTP.Authenticate;
+    except
+      on E:Exception do
+      begin
+        MessageDlg('Erro na conexão ou autenticação: ' +
+          E.Message, mtWarning, [mbOK], 0);
+        Exit;
+      end;
+    end;
+
+    // Envio da mensagem
+    try
+      IdSMTP.Send(IdMessage);
+      MessageDlg('Mensagem enviada com sucesso!', mtInformation, [mbOK], 0);
+    except
+      On E:Exception do
+      begin
+        MessageDlg('Erro ao enviar a mensagem: ' +
+          E.Message, mtWarning, [mbOK], 0);
+      end;
+    end;
+  finally
+    // desconecta do servidor
+    IdSMTP.Disconnect;
+    // liberação da DLL
+    UnLoadOpenSSLLibrary;
+    // liberação dos objetos da memória
+    FreeAndNil(IdMessage);
+    FreeAndNil(IdSSLIOHandlerSocket);
+    FreeAndNil(IdSMTP);
+  end;
+end;
+end.
